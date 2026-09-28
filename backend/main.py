@@ -14,14 +14,29 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+COOKIES_PATH = "/etc/secrets/cookies.txt"
+
+def ydl_opts_base():
+    opts = {'quiet': True}
+    if os.path.exists(COOKIES_PATH):
+        opts['cookiefile'] = COOKIES_PATH
+    return opts
+
 @app.get("/")
 def health():
-    return {"status": "ok", "message": "Dawnloader API running v2.0"}
+    has_cookies = os.path.exists(COOKIES_PATH)
+    return {
+        "status": "ok",
+        "message": "Dawnloader API running v2.0",
+        "cookies_loaded": has_cookies
+    }
 
 @app.get("/api/thumbnail")
 def get_thumbnail(url: str = Query(...)):
     try:
-        with yt_dlp.YoutubeDL({'quiet': True, 'skip_download': True}) as ydl:
+        opts = ydl_opts_base()
+        opts['skip_download'] = True
+        with yt_dlp.YoutubeDL(opts) as ydl:
             info = ydl.extract_info(url, download=False)
         return {"thumbnail": info.get('thumbnail')}
     except Exception as e:
@@ -30,7 +45,9 @@ def get_thumbnail(url: str = Query(...)):
 @app.get("/api/formats")
 def get_formats(url: str = Query(...)):
     try:
-        with yt_dlp.YoutubeDL({'quiet': True, 'skip_download': True}) as ydl:
+        opts = ydl_opts_base()
+        opts['skip_download'] = True
+        with yt_dlp.YoutubeDL(opts) as ydl:
             info = ydl.extract_info(url, download=False)
         formats = []
         for f in info.get('formats', []):
@@ -62,17 +79,18 @@ def download(url: str = Query(...), format_id: str = Query(None), audio_only: bo
         tmpdir = tempfile.mkdtemp()
         outtmpl = os.path.join(tmpdir, '%(title)s.%(ext)s')
 
+        opts = ydl_opts_base()
+
         if audio_only:
-            opts = {
+            opts.update({
                 'format': 'bestaudio/best',
                 'outtmpl': outtmpl,
-                'quiet': True,
                 'postprocessors': [{'key': 'FFmpegExtractAudio', 'preferredcodec': 'mp3'}],
-            }
+            })
         elif format_id:
-            opts = {'format': format_id, 'outtmpl': outtmpl, 'quiet': True}
+            opts.update({'format': format_id, 'outtmpl': outtmpl})
         else:
-            opts = {'format': 'bestvideo+bestaudio/best', 'outtmpl': outtmpl, 'quiet': True}
+            opts.update({'format': 'bestvideo+bestaudio/best', 'outtmpl': outtmpl})
 
         with yt_dlp.YoutubeDL(opts) as ydl:
             info = ydl.extract_info(url, download=True)
