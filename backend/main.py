@@ -1,4 +1,5 @@
 import os
+import shutil
 import tempfile
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse
@@ -14,21 +15,52 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-COOKIES_PATH = "/etc/secrets/cookies.txt"
+SECRETS_COOKIES_PATH = "/etc/secrets/cookies.txt"
+
+def get_cookies_path():
+    """
+    Read-only /etc/secrets ton cookies nu writable temp location te copy kar.
+    Cache karda hai taaki baar-baar copy na karna painda.
+    """
+    if not os.path.exists(SECRETS_COOKIES_PATH):
+        return None
+
+    # Writable path (temp folder)
+    writable_path = os.path.join(tempfile.gettempdir(), "yt_cookies.txt")
+
+    # Agar pehlaan copy ho chuki hai te same hai, dobara copy nahi karna
+    try:
+        if (os.path.exists(writable_path) and
+            os.path.getsize(writable_path) == os.path.getsize(SECRETS_COOKIES_PATH) and
+            os.path.getmtime(writable_path) >= os.path.getmtime(SECRETS_COOKIES_PATH)):
+            return writable_path
+    except OSError:
+        pass
+
+    # Copy kar
+    try:
+        shutil.copy(SECRETS_COOKIES_PATH, writable_path)
+        os.chmod(writable_path, 0o600)
+        return writable_path
+    except Exception as e:
+        print(f"[cookies] Copy fail: {e}")
+        return None
 
 def ydl_opts_base():
+    """Base yt-dlp options with cookies"""
     opts = {'quiet': True}
-    if os.path.exists(COOKIES_PATH):
-        opts['cookiefile'] = COOKIES_PATH
+    cookies = get_cookies_path()
+    if cookies:
+        opts['cookiefile'] = cookies
     return opts
 
 @app.get("/")
 def health():
-    has_cookies = os.path.exists(COOKIES_PATH)
+    cookies = get_cookies_path()
     return {
         "status": "ok",
         "message": "Dawnloader API running v2.0",
-        "cookies_loaded": has_cookies
+        "cookies_loaded": cookies is not None
     }
 
 @app.get("/api/thumbnail")
