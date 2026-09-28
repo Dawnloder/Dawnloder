@@ -18,17 +18,9 @@ app.add_middleware(
 SECRETS_COOKIES_PATH = "/etc/secrets/cookies.txt"
 
 def get_cookies_path():
-    """
-    Read-only /etc/secrets ton cookies nu writable temp location te copy kar.
-    Cache karda hai taaki baar-baar copy na karna painda.
-    """
     if not os.path.exists(SECRETS_COOKIES_PATH):
         return None
-
-    # Writable path (temp folder)
     writable_path = os.path.join(tempfile.gettempdir(), "yt_cookies.txt")
-
-    # Agar pehlaan copy ho chuki hai te same hai, dobara copy nahi karna
     try:
         if (os.path.exists(writable_path) and
             os.path.getsize(writable_path) == os.path.getsize(SECRETS_COOKIES_PATH) and
@@ -36,8 +28,6 @@ def get_cookies_path():
             return writable_path
     except OSError:
         pass
-
-    # Copy kar
     try:
         shutil.copy(SECRETS_COOKIES_PATH, writable_path)
         os.chmod(writable_path, 0o600)
@@ -47,8 +37,12 @@ def get_cookies_path():
         return None
 
 def ydl_opts_base():
-    """Base yt-dlp options with cookies"""
-    opts = {'quiet': True}
+    opts = {
+        'quiet': True,
+        'no_warnings': False,
+        'nocheckcertificate': True,
+        'geo_bypass': True,
+    }
     cookies = get_cookies_path()
     if cookies:
         opts['cookiefile'] = cookies
@@ -83,18 +77,22 @@ def get_formats(url: str = Query(...)):
             info = ydl.extract_info(url, download=False)
         formats = []
         for f in info.get('formats', []):
-            if f.get('vcodec') != 'none' or f.get('acodec') != 'none':
-                formats.append({
-                    "format_id": f.get('format_id'),
-                    "ext": f.get('ext'),
-                    "resolution": f.get('resolution') or f.get('format_note'),
-                    "vcodec": f.get('vcodec'),
-                    "acodec": f.get('acodec'),
-                    "filesize": f.get('filesize') or f.get('filesize_approx'),
-                    "format_note": f.get('format_note'),
-                    "abr": f.get('abr'),
-                    "tbr": f.get('tbr'),
-                })
+            # Skip formats jo playable nahi ne
+            if f.get('vcodec') == 'none' and f.get('acodec') == 'none':
+                continue
+            formats.append({
+                "format_id": f.get('format_id'),
+                "ext": f.get('ext'),
+                "resolution": f.get('resolution') or f.get('format_note'),
+                "vcodec": f.get('vcodec'),
+                "acodec": f.get('acodec'),
+                "filesize": f.get('filesize') or f.get('filesize_approx'),
+                "format_note": f.get('format_note'),
+                "abr": f.get('abr'),
+                "tbr": f.get('tbr'),
+                "height": f.get('height'),
+                "width": f.get('width'),
+            })
         return {
             "title": info.get('title'),
             "uploader": info.get('uploader'),
@@ -112,17 +110,19 @@ def download(url: str = Query(...), format_id: str = Query(None), audio_only: bo
         outtmpl = os.path.join(tmpdir, '%(title)s.%(ext)s')
 
         opts = ydl_opts_base()
+        opts['outtmpl'] = outtmpl
 
         if audio_only:
-            opts.update({
-                'format': 'bestaudio/best',
-                'outtmpl': outtmpl,
-                'postprocessors': [{'key': 'FFmpegExtractAudio', 'preferredcodec': 'mp3'}],
-            })
+            opts['format'] = 'bestaudio/best'
+            opts['postprocessors'] = [{'key': 'FFmpegExtractAudio', 'preferredcodec': 'mp3'}]
         elif format_id:
-            opts.update({'format': format_id, 'outtmpl': outtmpl})
+            # Format selection improved:
+            # Agar specific format_id ditta, osnu use kar
+            # Agar ohi na hove, taan best fallback
+            opts['format'] = f'{format_id}+bestaudio/{format_id}/best'
         else:
-            opts.update({'format': 'bestvideo+bestaudio/best', 'outtmpl': outtmpl})
+            # Default: best video + best audio
+            opts['format'] = 'bestvideo+bestaudio/best'
 
         with yt_dlp.YoutubeDL(opts) as ydl:
             info = ydl.extract_info(url, download=True)
@@ -130,7 +130,7 @@ def download(url: str = Query(...), format_id: str = Query(None), audio_only: bo
 
         if not os.path.exists(filename):
             base, _ = os.path.splitext(filename)
-            for ext in ['.mp3', '.mp4', '.webm', '.m4a', '.jpg', '.png']:
+            for ext in ['.mp3', '.mp4', '.webm', '.m4a', '.jpg', '.png', '.mkv']:
                 if os.path.exists(base + ext):
                     filename = base + ext
                     break
