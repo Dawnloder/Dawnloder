@@ -11,7 +11,7 @@
   "categories": ["utilities", "productivity", "entertainment"],
   "scope": "/Dawnloder/",
   "share_target": {
-    "action": "/Dawnloder/share",
+    "action": "/Dawnloder/index.html",
     "method": "GET",
     "enctype": "application/x-www-form-urlencoded",
     "params": {
