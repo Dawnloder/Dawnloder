@@ -5,6 +5,7 @@
   "display": "standalone",
   "background_color": "#05060a",
   "theme_color": "#05060a",
+  "description": "Download any video from YouTube, Instagram, Facebook, Threads and 1000+ sites. Free, no ads, no login.",
   "icons": [
     {
       "src": "icon-192.png",
