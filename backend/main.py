@@ -17,14 +17,15 @@ app.add_middleware(
 
 SECRETS_COOKIES_PATH = "/etc/secrets/cookies.txt"
 
+
 def get_cookies_path():
     if not os.path.exists(SECRETS_COOKIES_PATH):
         return None
     writable_path = os.path.join(tempfile.gettempdir(), "yt_cookies.txt")
     try:
         if (os.path.exists(writable_path) and
-            os.path.getsize(writable_path) == os.path.getsize(SECRETS_COOKIES_PATH) and
-            os.path.getmtime(writable_path) >= os.path.getmtime(SECRETS_COOKIES_PATH)):
+                os.path.getsize(writable_path) == os.path.getsize(SECRETS_COOKIES_PATH) and
+                os.path.getmtime(writable_path) >= os.path.getmtime(SECRETS_COOKIES_PATH)):
             return writable_path
     except OSError:
         pass
@@ -35,6 +36,7 @@ def get_cookies_path():
     except Exception as e:
         print(f"[cookies] Copy fail: {e}")
         return None
+
 
 def ydl_opts_base():
     opts = {
@@ -48,6 +50,24 @@ def ydl_opts_base():
         opts['cookiefile'] = cookies
     return opts
 
+
+def estimate_size(f, duration):
+    """
+    Estimate file size from bitrate and duration when filesize is missing.
+    Returns int (bytes) or None.
+    """
+    try:
+        # Prefer tbr (total bitrate), fallback to abr (audio) or vbr (video)
+        tbr = f.get('tbr') or f.get('vbr') or f.get('abr')
+        if not tbr or not duration:
+            return None
+        # tbr in kbps, duration in seconds
+        # bytes = (kbps * 1000 / 8) * seconds
+        return int((float(tbr) * 1000 / 8) * float(duration))
+    except Exception:
+        return None
+
+
 @app.get("/")
 def health():
     cookies = get_cookies_path()
@@ -56,6 +76,7 @@ def health():
         "message": "Dawnloader API running v2.0",
         "cookies_loaded": cookies is not None
     }
+
 
 @app.get("/api/thumbnail")
 def get_thumbnail(url: str = Query(...)):
@@ -68,6 +89,7 @@ def get_thumbnail(url: str = Query(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.get("/api/formats")
 def get_formats(url: str = Query(...)):
     try:
@@ -75,33 +97,44 @@ def get_formats(url: str = Query(...)):
         opts['skip_download'] = True
         with yt_dlp.YoutubeDL(opts) as ydl:
             info = ydl.extract_info(url, download=False)
+
+        duration = info.get('duration')
         formats = []
+
         for f in info.get('formats', []):
             # Skip formats jo playable nahi ne
             if f.get('vcodec') == 'none' and f.get('acodec') == 'none':
                 continue
+
+            # File size: exact → approximate → estimated
+            size = f.get('filesize') or f.get('filesize_approx')
+            if not size:
+                size = estimate_size(f, duration)
+
             formats.append({
                 "format_id": f.get('format_id'),
                 "ext": f.get('ext'),
                 "resolution": f.get('resolution') or f.get('format_note'),
                 "vcodec": f.get('vcodec'),
                 "acodec": f.get('acodec'),
-                "filesize": f.get('filesize') or f.get('filesize_approx'),
+                "filesize": size,
                 "format_note": f.get('format_note'),
                 "abr": f.get('abr'),
                 "tbr": f.get('tbr'),
                 "height": f.get('height'),
                 "width": f.get('width'),
             })
+
         return {
             "title": info.get('title'),
             "uploader": info.get('uploader'),
-            "duration": info.get('duration'),
+            "duration": duration,
             "thumbnail": info.get('thumbnail'),
             "formats": formats
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.get("/api/download")
 def download(url: str = Query(...), format_id: str = Query(None), audio_only: bool = Query(False)):
@@ -116,12 +149,9 @@ def download(url: str = Query(...), format_id: str = Query(None), audio_only: bo
             opts['format'] = 'bestaudio/best'
             opts['postprocessors'] = [{'key': 'FFmpegExtractAudio', 'preferredcodec': 'mp3'}]
         elif format_id:
-            # Format selection improved:
-            # Agar specific format_id ditta, osnu use kar
-            # Agar ohi na hove, taan best fallback
+            # Format selection: try video+audio merge, fallback to single, then best
             opts['format'] = f'{format_id}+bestaudio/{format_id}/best'
         else:
-            # Default: best video + best audio
             opts['format'] = 'bestvideo+bestaudio/best'
 
         with yt_dlp.YoutubeDL(opts) as ydl:
