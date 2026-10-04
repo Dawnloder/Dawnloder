@@ -2384,7 +2384,7 @@ input { font: inherit; color: inherit; }
 
     el.innerHTML = formats.slice(0, 40).map(f => {
       const label = f.resolution || f.format_note || (f.abr && `${f.abr}kbps`) || (f.ext?.toUpperCase()) || 'Unknown';
-      const size  = formatBytes(f.filesize);
+      const size  = formatBytes(f.filesize || f.filesize_approx);
       const ext   = (f.ext || '').toUpperCase();
       const codec = (f.vcodec && f.vcodec !== 'none') ? f.vcodec.split('.')[0] : (f.acodec?.split('.')[0] || '');
 
@@ -2413,8 +2413,12 @@ input { font: inherit; color: inherit; }
 
       const dlUrl = `${API}/api/download?url=${encodeURIComponent(currentUrl)}&format_id=${encodeURIComponent(fmtId)}${audioOnly ? '&audio_only=true' : ''}`;
 
-      toast('Starting download…');
-      window.open(dlUrl, '_blank');
+      const iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      iframe.src = dlUrl;
+      document.body.appendChild(iframe);
+      setTimeout(() => iframe.remove(), 15000);
+      toast('Download started... Check notification bar');
     };
   }
 
