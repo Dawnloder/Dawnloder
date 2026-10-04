@@ -2063,6 +2063,75 @@ input { font: inherit; color: inherit; }
   // ⚠️ CHANGE THIS: apna UPI ID
   const UPI_ID = "YOUR_UPI_ID";
 
+  /* ============================================================
+     🔗 SHARE INTENT HANDLER
+     Handles ?url=... and ?text=... from Android share menu
+     ============================================================ */
+  (function handleShareIntent() {
+    function extractSharedUrl() {
+      const params = new URLSearchParams(window.location.search);
+
+      // 1. Direct ?url= param (most reliable)
+      const directUrl = params.get('url');
+      if (directUrl && /^https?:\/\//i.test(directUrl.trim())) {
+        return directUrl.trim();
+      }
+
+      // 2. ?text= param — may contain extra words (e.g. Instagram reels)
+      const text = params.get('text');
+      if (text) {
+        const match = text.match(/https?:\/\/[^\s]+/i);
+        if (match) return match[0];
+      }
+
+      // 3. Fallback: check hash too (some launchers put it there)
+      const hash = window.location.hash;
+      if (hash) {
+        const hashMatch = hash.match(/https?:\/\/[^\s&]+/i);
+        if (hashMatch) return hashMatch[0];
+      }
+
+      return null;
+    }
+
+    function runShareIntent() {
+      const sharedUrl = extractSharedUrl();
+      if (!sharedUrl) return;
+
+      const input = document.getElementById('urlInput');
+      const btn   = document.getElementById('fetchBtn');
+      if (!input || !btn) return;
+
+      // Fill the input
+      input.value = sharedUrl;
+
+      // Clean the URL bar (hides ?url=... param)
+      if (window.history && window.history.replaceState) {
+        try {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        } catch (_) {}
+      }
+
+      // Wait for DOM + loader, then trigger fetch
+      setTimeout(() => {
+        btn.click();
+      }, 500);
+    }
+
+    // Run after DOM is ready (handles both fresh load + already-loaded)
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', runShareIntent, { once: true });
+    } else {
+      runShareIntent();
+    }
+
+    // Also re-run on back/forward navigation (bfcache)
+    window.addEventListener('pageshow', (e) => {
+      if (e.persisted) runShareIntent();
+    });
+  })();
+
+  /* ============ HELPERS ============ */
   const $  = (s, c = document) => c.querySelector(s);
   const $$ = (s, c = document) => [...c.querySelectorAll(s)];
   const isMobile = () => window.innerWidth <= 900;
@@ -2485,7 +2554,6 @@ input { font: inherit; color: inherit; }
       selectedAmount = val;
       $$('.amount-btn', amountGrid).forEach(b => b.classList.remove('selected'));
     } else if (!customAmount.value) {
-      // Revert to selected preset if cleared
       const sel = $('.amount-btn.selected', amountGrid);
       if (!sel) {
         const def = $('.amount-btn[data-amount="50"]', amountGrid);
