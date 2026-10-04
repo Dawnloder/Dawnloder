@@ -1,11 +1,25 @@
 {
+  "id": "/Dawnloder/",
   "name": "Dawnloader",
   "short_name": "Dawnloader",
+  "description": "Download any video from YouTube, Instagram, Facebook, Threads and 1000+ sites. Free, no ads, no login.",
   "start_url": "/Dawnloder/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#05060a",
   "theme_color": "#05060a",
-  "description": "Download any video from YouTube, Instagram, Facebook, Threads and 1000+ sites. Free, no ads, no login.",
+  "categories": ["utilities", "productivity", "entertainment"],
+  "scope": "/Dawnloder/",
+  "share_target": {
+    "action": "/Dawnloder/share",
+    "method": "GET",
+    "enctype": "application/x-www-form-urlencoded",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
   "icons": [
     {
       "src": "icon-192.png",
