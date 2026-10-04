@@ -3,6 +3,6 @@
       "target": {
         "namespace": "android_app",
         "package_name": "com.dawnloader.app",
-        "sha256_cert_fingerprints": ["FC:46:C9:42:F6:34:24:8A:EC:05:E1:E9:1E:DB:FF:E7:8D:C1:D3:E7:3D:7A:59:D0:41:68:71:B2:3D:BA:A9:FF"]
+        "sha256_cert_fingerprints": ["AB:6D:E5:52:7A:3E:E4:47:B0:29:9B:CF:A6:8D:B5:C8:7B:80:44:71:BC:7F:C4:B2:47:4F:BE:92:D0:17:26:1E"]
       }
     }]
