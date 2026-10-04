@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.dawnloader.app",
+        "sha256_cert_fingerprints": ["F0:9B:E1:D6:B5:C0:DC:03:59:FD:04:4C:9F:47:01:85:81:79:D5:32:FF:05:42:8F:65:AC:17:C6:19:CA:F7:EF"]
+      }
+    }]
