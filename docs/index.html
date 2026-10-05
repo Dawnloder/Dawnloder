@@ -1575,10 +1575,178 @@ input { font: inherit; color: inherit; }
   .motion .reveal:not(.in) { opacity: 1; transform: none; filter: none; }
   .orb, .strip-track, .loader-logo svg, .donate-fab { animation: none !important; }
 }
+
+/* ============================================================
+   PWA INSTALL BANNER
+   ============================================================ */
+.pwa-banner {
+  position: fixed;
+  bottom: calc(24px + var(--safe-bottom));
+  left: 50%;
+  transform: translateX(-50%) translateY(140%);
+  z-index: 1400;
+  width: min(520px, calc(100% - 32px));
+  padding: 16px 18px;
+  border-radius: var(--r-lg);
+  background: rgba(10,13,22,0.88);
+  backdrop-filter: blur(24px) saturate(200%);
+  -webkit-backdrop-filter: blur(24px) saturate(200%);
+  border: 1px solid var(--line-2);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 40px rgba(0,229,255,0.08), inset 0 1px 0 rgba(255,255,255,0.08);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    transform .65s var(--ease-spring),
+    opacity .45s var(--ease-io),
+    visibility .45s var(--ease-io);
+  will-change: transform, opacity;
+  isolation: isolate;
+}
+.pwa-banner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: var(--glass-border);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+.pwa-banner.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  visibility: visible;
+}
+.pwa-banner.hide {
+  transform: translateX(-50%) translateY(140%);
+  opacity: 0;
+  visibility: hidden;
+}
+
+.pwa-icon {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  animation: pwaPulse 2.4s ease-in-out infinite;
+}
+.pwa-icon img,
+.pwa-icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+@keyframes pwaPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0,229,255,0.35); }
+  50% { box-shadow: 0 0 0 8px rgba(0,229,255,0); }
+}
+
+.pwa-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.pwa-text b {
+  font-family: var(--font);
+  font-size: .92rem;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -.01em;
+  line-height: 1.25;
+}
+.pwa-text span {
+  font-size: .74rem;
+  color: var(--text-soft);
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pwa-install {
+  flex-shrink: 0;
+  min-height: 40px;
+  padding: 0 18px;
+  border-radius: var(--r-pill);
+  background: var(--grad);
+  color: #05060a;
+  font-family: var(--font);
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .01em;
+  box-shadow: 0 8px 24px rgba(0,229,255,0.35), inset 0 1px 0 rgba(255,255,255,0.5);
+  transition: transform .25s var(--ease-io), box-shadow .3s var(--ease);
+  white-space: nowrap;
+}
+.pwa-install:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 12px 32px rgba(0,229,255,0.5), inset 0 1px 0 rgba(255,255,255,0.6);
+}
+.pwa-install:active { transform: scale(.96); }
+
+.pwa-close {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(10,13,22,0.92);
+  border: 1px solid var(--line-2);
+  color: var(--text-soft);
+  font-size: 1rem;
+  line-height: 1;
+  transition: all .25s var(--ease-io);
+  z-index: 2;
+}
+.pwa-close:hover {
+  background: rgba(255,61,139,0.18);
+  border-color: rgba(255,61,139,0.45);
+  color: var(--pink);
+  transform: rotate(90deg);
+}
+
+@media (max-width: 500px) {
+  .pwa-banner {
+    left: 16px;
+    right: 16px;
+    width: auto;
+    transform: translateY(140%);
+    padding: 14px 16px;
+    gap: 12px;
+    bottom: calc(16px + var(--safe-bottom));
+  }
+  .pwa-banner.show {
+    transform: translateY(0);
+  }
+  .pwa-banner.hide {
+    transform: translateY(140%);
+  }
+  .pwa-icon { width: 42px; height: 42px; }
+  .pwa-text b { font-size: .86rem; }
+  .pwa-text span { font-size: .7rem; }
+  .pwa-install { min-height: 38px; padding: 0 14px; font-size: .74rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pwa-banner { transition-duration: .01ms !important; }
+  .pwa-icon { animation: none !important; }
+}
 </style>
 </head>
 <body>
-
 <!-- LOADER -->
 <div class="loader" id="loader">
   <div class="loader-inner">
@@ -2015,6 +2183,28 @@ input { font: inherit; color: inherit; }
   <span>Donate</span>
 </button>
 
+<!-- PWA INSTALL BANNER -->
+<div class="pwa-banner" id="pwaBanner" role="dialog" aria-label="Install Dawnloader app">
+  <button class="pwa-close" id="pwaClose" aria-label="Dismiss">×</button>
+  <div class="pwa-icon">
+    <svg viewBox="0 0 64 64">
+      <defs>
+        <linearGradient id="pwaG" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#00E5FF"/>
+          <stop offset="1" stop-color="#7C3AED"/>
+        </linearGradient>
+      </defs>
+      <rect width="64" height="64" rx="16" fill="#0a0d16"/>
+      <path d="M32 14v24M22 30l10 10 10-10M20 46h24" stroke="url(#pwaG)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    </svg>
+  </div>
+  <div class="pwa-text">
+    <b>Install Dawnloader</b>
+    <span>Fast, offline-ready, and app-like on your device.</span>
+  </div>
+  <button class="pwa-install" id="pwaInstall">Install</button>
+</div>
+
 <!-- DONATE MODAL -->
 <div class="modal-backdrop" id="donateBackdrop" role="dialog" aria-modal="true" aria-labelledby="donateTitle">
   <div class="modal" id="donateModal">
@@ -2062,6 +2252,170 @@ input { font: inherit; color: inherit; }
 
   // ⚠️ CHANGE THIS: apna UPI ID
   const UPI_ID = "YOUR_UPI_ID";
+
+  /* ============================================================
+     📱 PWA INSTALL BANNER
+     Shows a custom install banner with:
+     - Native Chrome install prompt trigger
+     - 7-day dismiss memory (localStorage)
+     - Detects standalone mode (already installed)
+     - Hides on 'appinstalled' event + shows toast
+     ============================================================ */
+  (function initPwaBanner() {
+    const DISMISS_KEY = 'dawnloader_pwa_dismissed_until';
+    const DISMISS_DAYS = 7;
+    const SHOW_DELAY_MS = 2500;
+
+    const banner    = document.getElementById('pwaBanner');
+    const installBtn = document.getElementById('pwaInstall');
+    const closeBtn   = document.getElementById('pwaClose');
+
+    if (!banner || !installBtn || !closeBtn) return;
+
+    // -------- 1. Already installed? (standalone display mode) --------
+    function isStandalone() {
+      return (
+        window.matchMedia('(display-mode: standalone)').matches ||
+        window.matchMedia('(display-mode: fullscreen)').matches ||
+        window.matchMedia('(display-mode: minimal-ui)').matches ||
+        window.navigator.standalone === true // iOS Safari
+      );
+    }
+
+    // -------- 2. Dismissed recently? (localStorage) --------
+    function isDismissedRecently() {
+      try {
+        const raw = localStorage.getItem(DISMISS_KEY);
+        if (!raw) return false;
+        const until = parseInt(raw, 10);
+        if (!until || Number.isNaN(until)) return false;
+        if (Date.now() < until) return true;
+        // Expired — clean up
+        localStorage.removeItem(DISMISS_KEY);
+        return false;
+      } catch (_) {
+        return false;
+      }
+    }
+
+    function dismissForDays(days) {
+      try {
+        const until = Date.now() + (days * 24 * 60 * 60 * 1000);
+        localStorage.setItem(DISMISS_KEY, String(until));
+      } catch (_) { /* ignore quota / private mode */ }
+    }
+
+    // -------- 3. Banner show / hide helpers --------
+    let hideTimer = null;
+
+    function showBanner() {
+      if (isStandalone() || isDismissedRecently()) return;
+      clearTimeout(hideTimer);
+      banner.classList.remove('hide');
+      // Force reflow so transition triggers cleanly
+      void banner.offsetWidth;
+      banner.classList.add('show');
+    }
+
+    function hideBanner(permanent) {
+      banner.classList.remove('show');
+      banner.classList.add('hide');
+      if (permanent) {
+        // optional: clean up after transition
+        clearTimeout(hideTimer);
+        hideTimer = setTimeout(() => {
+          banner.style.display = 'none';
+        }, 700);
+      }
+    }
+
+    // -------- 4. Capture Chrome's beforeinstallprompt --------
+    let deferredPrompt = null;
+    let promptAvailable = false;
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      // Prevent the mini-infobar from appearing on mobile
+      e.preventDefault();
+      deferredPrompt = e;
+      promptAvailable = true;
+
+      // Show our custom banner after a short delay
+      if (!isStandalone() && !isDismissedRecently()) {
+        setTimeout(showBanner, SHOW_DELAY_MS);
+      }
+    });
+
+    // -------- 5. Install button click --------
+    installBtn.addEventListener('click', async () => {
+      if (!deferredPrompt) {
+        // Browser didn't fire the event (Firefox / iOS Safari etc.)
+        // Give a helpful hint instead of failing silently.
+        if (typeof toast === 'function') {
+          toast('Use your browser menu → "Add to Home Screen"', true);
+        }
+        return;
+      }
+
+      try {
+        deferredPrompt.prompt();
+        const choice = await deferredPrompt.userChoice;
+
+        if (choice && choice.outcome === 'accepted') {
+          if (typeof toast === 'function') toast('Installing Dawnloader…');
+        } else if (choice && choice.outcome === 'dismissed') {
+          if (typeof toast === 'function') toast('Install cancelled', true);
+        }
+      } catch (err) {
+        console.error('PWA prompt error:', err);
+        if (typeof toast === 'function') toast('Could not open install prompt', true);
+      } finally {
+        // The prompt can only be used once
+        deferredPrompt = null;
+        promptAvailable = false;
+        hideBanner(true);
+      }
+    });
+
+    // -------- 6. Close button — remember for 7 days --------
+    closeBtn.addEventListener('click', () => {
+      dismissForDays(DISMISS_DAYS);
+      hideBanner(true);
+      if (typeof toast === 'function') {
+        toast('Install banner hidden for 7 days');
+      }
+    });
+
+    // -------- 7. Detect successful install --------
+    window.addEventListener('appinstalled', () => {
+      // Clear any dismiss memory so a fresh install always shows fresh state
+      try { localStorage.removeItem(DISMISS_KEY); } catch (_) {}
+      deferredPrompt = null;
+      promptAvailable = false;
+      hideBanner(true);
+      if (typeof toast === 'function') {
+        toast('Dawnloader installed! 🎉');
+      }
+    });
+
+    // -------- 8. Fallback: if beforeinstallprompt never fires --------
+    // Some browsers (iOS Safari) don't fire it. We still show a banner
+    // after a delay IF the app isn't already installed and wasn't dismissed.
+    // The Install button then shows the "Add to Home Screen" hint.
+    setTimeout(() => {
+      if (promptAvailable) return;           // already handled
+      if (isStandalone()) return;            // already installed
+      if (isDismissedRecently()) return;     // user said no recently
+      showBanner();
+    }, SHOW_DELAY_MS + 800);
+
+    // -------- 9. React to display-mode changes live --------
+    const mq = window.matchMedia('(display-mode: standalone)');
+    if (mq && typeof mq.addEventListener === 'function') {
+      mq.addEventListener('change', (e) => {
+        if (e.matches) hideBanner(true);
+      });
+    }
+  })();
 
   /* ============================================================
      🔗 SHARE INTENT HANDLER
